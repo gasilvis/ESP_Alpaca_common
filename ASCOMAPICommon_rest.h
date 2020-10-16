@@ -9,13 +9,21 @@ File to be included into relevant device REST setup
 #include "JSONHelperFunctions.h"
 
 /*
-extern bool connected;
-extern String DriverName;
-extern String DriverVersion;
-extern String DriverInfo;
-extern String Description;
-extern String InterfaceVersion;
+const String DeviceDescription=  "the rain in spain";
+const String DriverName=         "observingconditions"; // ASCOM name
+const String DriverVersion=      DRIVER_VERSION;
+const String DriverInfo=         "V4_sgeo";
+const String Description=        "AAVSO AM_WeatherBox2, ESP8266, NodeMCU 0.9(ESP-12 Module)" ;
+const String InterfaceVersion= "1";   // alpaca v1
+const String DiscoveryPacket= "alpacadiscovery1"; // ends with the interface version
+const String GUID=    "fa7b12dc-dff9-407c-a7f5-3b5e73b77c04";
+#define INSTANCE_NUMBER 0
+const String SERVERNAME= "abc";
+const String MFG= "AAVSO AM project";
+const String MFG_VERSION= DRIVER_VERSION;
+const String LOCATION= "unknown";
 */
+
 //PUT /{DeviceType}/{DeviceNumber}/Action Invokes the specified device-specific action.
 void handleAction(void);
 //PUT /{DeviceType}/{DeviceNumber}/CommandBlind Transmits an arbitrary string to the device
@@ -297,6 +305,9 @@ void handleSupportedActionsGet(void)
     return ;
 }
 
+
+
+// Management API
 void handleAPIversions(void)
 {
     String message;
@@ -312,7 +323,34 @@ void handleAPIversions(void)
 #ifdef DEBUG_ESP_HTTP_SERVER
 DEBUG_OUTPUT.println( message );
 #endif
+  
+    server.send(200, "application/json", message);
+    return ;
+}
+
+void handleAPIdescription(void)
+{
+    String message;
+    uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
+    uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
+
+    DynamicJsonBuffer jsonBuff(256);
+    JsonObject& root = jsonBuff.createObject();
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "Description", 0, "" );    
     
+    JsonArray& values  = root.createNestedArray("Value");
+    DynamicJsonBuffer jsonBuff2(256);
+    JsonObject& device= jsonBuff2.createObject();
+    device["ServerName"]= SERVERNAME;
+    device["Manufacturer"]= MFG;
+    device["Manufacturerversion"]= MFG_VERSION;
+    device["Location"]= LOCATION;    
+    values.add(device);    
+   
+    root.printTo(message);
+#ifdef DEBUG_ESP_HTTP_SERVER
+DEBUG_OUTPUT.println( message );
+#endif
     server.send(200, "application/json", message);
     return ;
 }
@@ -326,21 +364,20 @@ void handleAPIconfiguredDevices(void)
     DynamicJsonBuffer jsonBuff(256);
     JsonObject& root = jsonBuff.createObject();
     jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "APIversions", Success, "" );  
+
     JsonArray& values  = root.createNestedArray("Value");
-    
     DynamicJsonBuffer jsonBuff2(256);
     JsonObject& device= jsonBuff2.createObject();
     device["DeviceName"]= Description;
     device["DeviceType"]= DriverName;
     device["DeviceNumber"]= INSTANCE_NUMBER;
     device["UniqueID"]= GUID;    
-
     values.add(device);    
+
     root.printTo(message);
 #ifdef DEBUG_ESP_HTTP_SERVER
 DEBUG_OUTPUT.println( message );
 #endif
-    
     server.send(200, "application/json", message);
     return ;
 }
