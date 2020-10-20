@@ -242,7 +242,7 @@ void handleDriverVersionGet(void)
     DynamicJsonBuffer jsonBuff(256);
     JsonObject& root = jsonBuff.createObject();
     jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "DriverVersion", Success, "" );    
-    root["Value"]= DriverVersion;    
+    root["Value"]= DriverVersion; // int   
     root.printTo(message);
 #ifdef DEBUG_ESP_HTTP_SERVER
 DEBUG_OUTPUT.println( message );
@@ -261,7 +261,7 @@ void handleInterfaceVersionGet(void)
     DynamicJsonBuffer jsonBuff(256);
     JsonObject& root = jsonBuff.createObject();
     jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "InterfaceVersion", Success, "" );    
-    root["Value"]= DriverVersion;    
+    root["Value"]= InterfaceVersion;    
     root.printTo(message);
 #ifdef DEBUG_ESP_HTTP_SERVER
 DEBUG_OUTPUT.println( message );
@@ -299,7 +299,7 @@ void handleSupportedActionsGet(void)
     JsonObject& root = jsonBuff.createObject();
     jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "SupportedActions", Success, "" );    
     JsonArray& values  = root.createNestedArray("Value");   
-    values.add(""); //Explicitly empty array
+    //values.add(""); //Explicitly empty array
     root.printTo(message);
     server.send(200, "application/json", message);
     return ;
