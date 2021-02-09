@@ -336,17 +336,16 @@ void handleAPIdescription(void)
 
     DynamicJsonBuffer jsonBuff(256);
     JsonObject& root = jsonBuff.createObject();
-    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "Description", 0, "" );    
-    
-    JsonArray& values  = root.createNestedArray("Value");
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "Description", Success, "" );    
+    //JsonArray& values  = root.createNestedArray("Value");
     DynamicJsonBuffer jsonBuff2(256);
     JsonObject& device= jsonBuff2.createObject();
     device["ServerName"]= SERVERNAME;
     device["Manufacturer"]= MFG;
     device["Manufacturerversion"]= MFG_VERSION;
     device["Location"]= LOCATION;    
-    values.add(device);    
-   
+    //values.add(device);
+    root["Value"]= device;    
     root.printTo(message);
 #ifdef DEBUG_ESP_HTTP_SERVER
 DEBUG_OUTPUT.println( message );
@@ -372,7 +371,7 @@ void handleAPIconfiguredDevices(void)
     device["DeviceType"]= DriverName;
     device["DeviceNumber"]= INSTANCE_NUMBER;
     device["UniqueID"]= GUID;    
-    values.add(device);    
+    values.add(device);
 
     root.printTo(message);
 #ifdef DEBUG_ESP_HTTP_SERVER
