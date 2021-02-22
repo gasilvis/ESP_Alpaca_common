@@ -26,12 +26,12 @@ void jsonResponseBuilder( JsonObject& root, unsigned int clientID, unsigned int 
 //DriverException {...}
    
     root["Value"] = 0;
-    root["ClientID"]= clientID;
+    //root["ClientID"]= clientID;
     root["ClientTransactionID"]= clientTransID;
     root["ServerTransactionID"]= serverTransID;
-    root["Method"]= methodName;
-    root["ErrorNumber"]= errNum;
-    root["ErrorMessage"] = errMsg;
+    //root["Method"]= methodName;
+    //root["ErrorNumber"]= errNum;
+    //root["ErrorMessage"] = errMsg;
 }
 
 /*

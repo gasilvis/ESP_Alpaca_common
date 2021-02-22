@@ -20,22 +20,22 @@ Clients and drivers must expect incoming API parameter keys to have any casing.
 Condition	                        Alpaca Error Number	
 Successful transaction	            0x0 
 Property or method not implemented	0x400 
-Invalid value	                     0x401 
-Value not set	                     0x402 
-Not connected	                     0x407 
-Invalid while parked	               0x408 
-Invalid while slaved	               0x409 
-Invalid operation	                  0x40B 
+Invalid value	                    0x401 
+Value not set	                    0x402 
+Not connected	                    0x407 
+Invalid while parked	            0x408 
+Invalid while slaved	            0x409 
+Invalid operation	                0x40B 
 Action not implemented	            0x40C 
 */
-enum alpacaErrors {  Success = 0x0, 
-                     notImplemented = 0x400, 
-                     invalidValue = 0x401, 
-                     valueNotSet = 0x402, 
-                     notConnected = 0x407, 
-                     invalidWhileParked = 0x408, 
-                     invalidWhileSlaved = 0x409, 
-                     invalidOperation = 0x40B, 
-                     actionNotImplemented = 0x40C };
+enum alpacaErrors {  AE_Success = 0x0, 
+                     AE_notImplemented = 0x400, 
+                     AE_invalidValue = 0x401, 
+                     AE_valueNotSet = 0x402, 
+                     AE_notConnected = 0x407, 
+                     AE_invalidWhileParked = 0x408, 
+                     AE_invalidWhileSlaved = 0x409, 
+                     AE_invalidOperation = 0x40B, 
+                     AE_actionNotImplemented = 0x40C };
 
 #endif
