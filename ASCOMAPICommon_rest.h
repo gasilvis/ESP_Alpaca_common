@@ -1,15 +1,22 @@
 /*
 File to be included into relevant device REST setup 
 */
-//Assumes Use of ARDUINO ESP8266WebServer for entry handlers
 #if !defined _ASCOMAPI_Common
 #define _ASCOMAPI_Common
+
+/*
+  Alpaca documentation: 
+  https://github.com/ASCOMInitiative/ASCOMRemote/blob/master/Documentation/ASCOM%20Alpaca%20API%20Reference.pdf
+  https://ascom-standards.org/api/
+*/
 
 #include "AlpacaErrorConsts.h"
 #include "ArduinoJson.h" // version 6
 #include "JSONHelperFunctions.h"
 #define JSON_SIZE  512
 
+//GET /{DeviceType}/{DeviceNumber}/SupportedActions Returns the list of action names supported by this driver.  
+void handleSupportedActionsGet(void);
 //PUT /{DeviceType}/{DeviceNumber}/Action Invokes the specified device-specific action.
 void handleAction(void);
 //PUT /{DeviceType}/{DeviceNumber}/CommandBlind Transmits an arbitrary string to the device
@@ -31,10 +38,39 @@ void handleDriverVersionGet(void);
 void handleNameGet(void);
 void handleNamePut(void); //Non-ASCOM , required by setup
 void handleFilterCountPut(void); 
-//GET /{DeviceType}/{DeviceNumber}/SupportedActions Returns the list of action names supported by this driver.  
-void handleSupportedActionsGet(void);
 
 int serverTransID= 0;
+
+void handleNotImplemented(void) {
+    String message;
+    uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
+    uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
+    StaticJsonDocument<JSON_SIZE> doc;
+    JsonObject root = doc.to<JsonObject>();
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_notImplemented, "Property is not implemented" );    
+    serializeJson(doc, message);
+    server.send(200, "application/json", message);
+}
+
+
+void handleSupportedActionsGet(void)
+{
+    String message;
+    uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
+    uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
+    StaticJsonDocument<JSON_SIZE> doc;
+    JsonObject root = doc.to<JsonObject>();
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "SupportedActions", AE_Success, "" );    
+    JsonArray values  = root.createNestedArray("Value"); 
+	if(SUPPORTED_ACTIONS_COUNT) {
+		for(int i= 0; i < SUPPORTED_ACTIONS_COUNT; i++) {
+			values.add(SupportedActions[i]);
+		}	
+	} // else it's empty an empty array
+    serializeJson(doc, message);
+    server.send(200, "application/json", message);
+    return ;
+}
 
 void handleAction(void)
 {
@@ -112,10 +148,6 @@ void handleConnected(void)
     
     if ( server.method() == HTTP_PUT )
     { 
-#ifdef DEBUG_ESP_HTTP_SERVER
-DEBUG_OUTPUT.printf( "handleConnected: arg:%s, connected: %i\n", server.arg("Connected").c_str(), connected );
-#endif
-
       //don't like the logic here - if it's already connected for this client we should refuse a connect. 
       if( server.arg("Connected").equalsIgnoreCase( "true" ) ) 
       { //setting to true 
@@ -125,9 +157,6 @@ DEBUG_OUTPUT.printf( "handleConnected: arg:%s, connected: %i\n", server.arg("Con
           jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "Connected", AE_Success, "" /*"Setting connected when already connected"*/ );        
           root["Value"]= true;    
           serializeJsonPretty(doc, message);
-#ifdef DEBUG_ESP_HTTP_SERVER
-DEBUG_OUTPUT.printf( "handleConnected: output:%s\n", message.c_str() );
-#endif
           server.send( 200, "application/json", message ); 
           return;
         }
@@ -196,9 +225,6 @@ void handleDescriptionGet(void)
     jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "Description", AE_Success, "" );    
     root["Value"]= DriverName;  // ASCOM device type  
     serializeJson(doc, message);
-#ifdef DEBUG_ESP_HTTP_SERVER
-DEBUG_OUTPUT.println( message );
-#endif
     server.send(200, "application/json", message);
     return ;
 }
@@ -213,9 +239,6 @@ void handleDriverInfoGet(void)
     jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "DriverInfo", AE_Success, "" );    
     root["Value"]= DriverInfo;    
     serializeJson(doc, message);
-#ifdef DEBUG_ESP_HTTP_SERVER
-DEBUG_OUTPUT.println( message );
-#endif
     server.send(200, "application/json", message);
     return ;
 }
@@ -230,9 +253,6 @@ void handleDriverVersionGet(void)
     jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "DriverVersion", AE_Success, "" );    
     root["Value"]= DriverVersion; // int   
     serializeJson(doc, message);
-#ifdef DEBUG_ESP_HTTP_SERVER
-DEBUG_OUTPUT.println( message );
-#endif
     server.send(200, "application/json", message);
     return ;
 }
@@ -247,9 +267,6 @@ void handleInterfaceVersionGet(void)
     jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "InterfaceVersion", AE_Success, "" );    
     root["Value"]= InterfaceVersion;    
     serializeJson(doc, message);
-#ifdef DEBUG_ESP_HTTP_SERVER
-DEBUG_OUTPUT.println( message );
-#endif
     server.send(200, "application/json", message);
     return ;
 }
@@ -264,28 +281,10 @@ void handleNameGet(void)
     jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "Name", AE_Success, "" );    
     root["Value"] = DriverName;  // ASCOM device type
     serializeJson(doc, message);
-#ifdef DEBUG_ESP_HTTP_SERVER
-DEBUG_OUTPUT.println( message );
-#endif
     server.send(200, "application/json", message);
     return ;
 }
 
-void handleSupportedActionsGet(void)
-{
-    String message;
-    uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
-    uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
-    StaticJsonDocument<JSON_SIZE> doc;
-    JsonObject root = doc.to<JsonObject>();
-    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "SupportedActions", AE_Success, "" );    
-    JsonArray values  = root.createNestedArray("Value");   
-    values.add("action1"); //Explicitly empty array    todo
-	values.add("action22");
-    serializeJson(doc, message);
-    server.send(200, "application/json", message);
-    return ;
-}
 
 
 
@@ -300,12 +299,10 @@ void handleAPIversions(void)
     uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
     StaticJsonDocument<JSON_SIZE> doc;
     JsonObject root = doc.to<JsonObject>();
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "APIversions", AE_Success, "" );    
     JsonArray values  = root.createNestedArray("Value");     
     values.add(atoi(InterfaceVersion.c_str()));
     serializeJson(doc, message);
-#ifdef DEBUG_ESP_HTTP_SERVER
-DEBUG_OUTPUT.println( message );
-#endif
     server.send(200, "application/json", message);
     return ;
 }
@@ -319,16 +316,13 @@ void handleAPIdescription(void)
     uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
     StaticJsonDocument<JSON_SIZE> doc;
     JsonObject root = doc.to<JsonObject>();
-    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "Description", AE_Success, "" );    
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "APIDescription", AE_Success, "" );    
 	JsonObject Value = root.createNestedObject("Value");
     Value["ServerName"]= SERVERNAME;
     Value["Manufacturer"]= MFG;
     Value["ManufacturerVersion"]= MFG_VERSION;
     Value["Location"]= LOCATION;   
 	serializeJson(doc, message);
-#ifdef DEBUG_ESP_HTTP_SERVER
-DEBUG_OUTPUT.println( message );
-#endif
     server.send(200, "application/json", message);
     return ;
 }
@@ -343,6 +337,7 @@ void handleAPIconfiguredDevices(void)
     uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
     StaticJsonDocument<JSON_SIZE> doc;
     JsonObject root = doc.to<JsonObject>();
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "APIconfigureddevices", AE_Success, "" );    
     JsonArray values  = root.createNestedArray("Value");
 	JsonObject device = values.createNestedObject(); // creates an object in the array
     device["DeviceName"]= Description; // To appear in list to user
@@ -351,13 +346,9 @@ void handleAPIconfiguredDevices(void)
     device["UniqueID"]= GUID; 
 	// todo are there more?
     serializeJson(doc, message);
-#ifdef DEBUG_ESP_HTTP_SERVER
-DEBUG_OUTPUT.println( message );
-#endif
     server.send(200, "application/json", message);
     return ;
 }
-
 
 
 #endif

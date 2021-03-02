@@ -6,9 +6,10 @@ File to be included into relevant device REST setup
 #define _ASCOM_ObservingConditions
 
 //focuser-specific variables
-extern float temperature;
-extern List monitorSources;
-extern List sourceWeights;
+//? extern float temperature;
+//? extern List monitorSources;
+//? extern List sourceWeights;
+//extern String[]= SupportedMethods;
 /*
 Averaging period only reflects some sensor entries. It  also requires you to have access to the last n data over the period. 
 May not know the frequency of data provision. 
@@ -23,11 +24,12 @@ May not know the frequency of data provision.
 //PUT ​/observingconditions​/{device_number}​/averageperiod
 //​Server.on( "/api/v1/observingconditions​/{device_number}​/averageperiod", HTTP_GET, ....);
 //Returns the time period over which observations will be averaged
-void handleAveragePeriod(void);
+void handleAveragePeriodGet(void);
+void handleAveragePeriodPut(void);
 
 //GET ​/observingconditions​/{device_number}​/cloudcover - doable, maybe
 //Returns the amount of sky obscured by cloud
-void handleCloudcover(void);
+//void handleCloudcover(void);
 
 //GET ​/observingconditions​/{device_number}​/dewpoint - doable
 //Returns the atmospheric dew point at the observatory
@@ -70,4 +72,74 @@ void handleCloudcover(void);
 
 //GET ​/observingconditions​/{device_number}​/timesincelastupdate - this seems confused - individual sensors or the last sensor ?
 //Return the time since the sensor value was last updated
+//void handleTimeSinceLastUpdat//e(void);
+
+int MethodsIndex(String sensor) {
+	int i;
+	sensor.toLowerCase();
+	for (i = 0; i < SUPPORTED_METHODS_COUNT; i++) {
+		if(SupportedMethods[i] == sensor) break;
+	}
+	if (i == SUPPORTED_METHODS_COUNT) return -1;
+	else return i;
+}
+
+void handleTimeSinceLastUpdate(void) {    
+	String message;
+    uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
+    uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
+    StaticJsonDocument<JSON_SIZE> doc;
+    JsonObject root = doc.to<JsonObject>();
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_Success, "" );    
+    String sensor= server.arg("SensorName");
+	if(sensor=="") { // latest time of all sensors
+	    double t= -1;
+		for(int i= 0; i < SUPPORTED_METHODS_COUNT; i++) {
+			if(t < MethodsLastTime[i]) t= MethodsLastTime[i];
+		}
+		root["Value"]= (millis() - t)/1000.0;
+	} else {	
+		int i= MethodsIndex(sensor);
+		if(-1 == i ) {
+			root["ErrorNumber"]= AE_notImplemented;
+			root["ErrorMessage"]= "Not implemented";
+		} else {
+			root["Value"]= (millis()-MethodsLastTime[i])/1000.0;
+		}
+	}
+    serializeJson(doc, message);
+    server.send(200, "application/json", message);
+}
+
+void handleSensorDescription(void) {    
+	String message;
+    uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
+    uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
+    StaticJsonDocument<JSON_SIZE> doc;
+    JsonObject root = doc.to<JsonObject>();
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_Success, "" );    
+    String sensor= server.arg("SensorName");
+	int i = MethodsIndex(sensor);
+	if(-1 == i) {
+		root["ErrorNumber"]= AE_notImplemented;
+		root["ErrorMessage"]= "Not implemented";
+	} else {
+		root["Value"]= MethodsDescription[i];
+	}
+    serializeJson(doc, message);
+    server.send(200, "application/json", message);
+}
+
+void handleRefresh(void) {    
+	String message;
+    uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
+    uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
+    StaticJsonDocument<JSON_SIZE> doc;
+    JsonObject root = doc.to<JsonObject>();
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_Success, "" );    
+	// should tell all the sensors to refresh here
+    serializeJson(doc, message);
+    server.send(200, "application/json", message);
+}
+
 #endif 

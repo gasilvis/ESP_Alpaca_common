@@ -29,9 +29,9 @@ void jsonResponseBuilder( JsonObject& root, unsigned int clientID, unsigned int 
     if(clientID) root["ClientID"]= clientID;
     root["ClientTransactionID"]= clientTransID;
     root["ServerTransactionID"]= serverTransID;
-    if(methodName) root["Method"]= methodName;
+    if(methodName.length()) root["Method"]= methodName;
     if(errNum) root["ErrorNumber"]= errNum;
-    if(errMsg) root["ErrorMessage"] = errMsg;
+    if(errMsg.length()) root["ErrorMessage"] = errMsg;
 }
 
 /*
