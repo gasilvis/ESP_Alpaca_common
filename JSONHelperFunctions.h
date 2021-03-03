@@ -25,13 +25,13 @@ void jsonResponseBuilder( JsonObject& root, unsigned int clientID, unsigned int 
 //ErrorMessage  string Error message description from device.
 //DriverException {...}
    
-    root["Value"] = 0;
-    //root["ClientID"]= clientID;
+    root["Value"] = 0; // to make it first; this will be overwritten
+    if(clientID) root["ClientID"]= clientID;
     root["ClientTransactionID"]= clientTransID;
     root["ServerTransactionID"]= serverTransID;
-    //root["Method"]= methodName;
-    //root["ErrorNumber"]= errNum;
-    //root["ErrorMessage"] = errMsg;
+    if(methodName.length()) root["Method"]= methodName;
+    if(errNum) root["ErrorNumber"]= errNum;
+    if(errMsg.length()) root["ErrorMessage"] = errMsg;
 }
 
 /*
