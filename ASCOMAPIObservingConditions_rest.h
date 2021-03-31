@@ -33,7 +33,7 @@ void handleAveragePeriodPut(void);
 
 //GET ​/observingconditions​/{device_number}​/dewpoint - doable
 //Returns the atmospheric dew point at the observatory
-
+                                                                                
 //GET /observingconditions​/{device_number}​/humidity - doable
 //Returns the atmospheric humidity at the observatory
 
@@ -74,18 +74,8 @@ void handleAveragePeriodPut(void);
 //Return the time since the sensor value was last updated
 //void handleTimeSinceLastUpdat//e(void);
 
-int MethodsIndex(String sensor) {
-	int i;
-	sensor.toLowerCase();
-	for (i = 0; i < SUPPORTED_METHODS_COUNT; i++) {
-		if(SupportedMethods[i] == sensor) break;
-	}
-	if (i == SUPPORTED_METHODS_COUNT) return -1;
-	else return i;
-}
-
 void handleTimeSinceLastUpdate(void) {    
-	String message;
+	String message; message.reserve(MSG_SIZE);
     uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
     uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
     StaticJsonDocument<JSON_SIZE> doc;
@@ -99,7 +89,7 @@ void handleTimeSinceLastUpdate(void) {
 		}
 		root["Value"]= (millis() - t)/1000.0;
 	} else {	
-		int i= MethodsIndex(sensor);
+		int i= MethodsIndex((char*)sensor.c_str());
 		if(-1 == i ) {
 			root["ErrorNumber"]= AE_notImplemented;
 			root["ErrorMessage"]= "Not implemented";
@@ -112,14 +102,15 @@ void handleTimeSinceLastUpdate(void) {
 }
 
 void handleSensorDescription(void) {    
-	String message;
+	String message; message.reserve(MSG_SIZE); 
     uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
     uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
     StaticJsonDocument<JSON_SIZE> doc;
     JsonObject root = doc.to<JsonObject>();
     jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_Success, "" );    
-    String sensor= server.arg("SensorName");
-	int i = MethodsIndex(sensor);
+    String sensor= server.arg("SensorName").c_str();
+    //Serial.println(sensor);
+	int i = MethodsIndex((char*)sensor.c_str());
 	if(-1 == i) {
 		root["ErrorNumber"]= AE_notImplemented;
 		root["ErrorMessage"]= "Not implemented";
@@ -131,7 +122,7 @@ void handleSensorDescription(void) {
 }
 
 void handleRefresh(void) {    
-	String message;
+	String message; message.reserve(MSG_SIZE);
     uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
     uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
     StaticJsonDocument<JSON_SIZE> doc;

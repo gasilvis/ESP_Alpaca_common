@@ -16,7 +16,7 @@ void jsonResponseBuilder( JsonObject&, uint32_t clientTransID, uint32_t transID,
 //the ErrorMessage field will be an empty string and the ErrorNumber field will be zero.
 //https://github.com/ASCOMInitiative/ASCOMRemote/blob/master/Documentation/ASCOM%20Alpaca%20API%20Reference.pdf
 //HTTP Status Codes and ASCOM Error codes
-void jsonResponseBuilder( JsonObject& root, unsigned int clientID, unsigned int clientTransID, unsigned int serverTransID, String methodName, int errNum , String errMsg )
+void jsonResponseBuilder( JsonObject& root, unsigned int clientID, unsigned int clientTransID, unsigned int serverTransID, const String& methodName, int errNum , const String& errMsg )
 {
 //ClientTransactionIDForm  unsigned integer($int32) Client's transaction ID.
 //ServerTransactionID unsigned integer($int32) Server's transaction ID.

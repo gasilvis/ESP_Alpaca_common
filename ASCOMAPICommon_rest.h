@@ -13,7 +13,8 @@ File to be included into relevant device REST setup
 #include "AlpacaErrorConsts.h"
 #include "ArduinoJson.h" // version 6
 #include "JSONHelperFunctions.h"
-#define JSON_SIZE  512
+#define JSON_SIZE  300
+#define MSG_SIZE   350
 
 //GET /{DeviceType}/{DeviceNumber}/SupportedActions Returns the list of action names supported by this driver.  
 void handleSupportedActionsGet(void);
@@ -39,10 +40,22 @@ void handleNameGet(void);
 void handleNamePut(void); //Non-ASCOM , required by setup
 void handleFilterCountPut(void); 
 
+int MethodsIndex(char* sensor) {
+	int i;
+	//sensor.toLowerCase();
+	for (i = 0; i < SUPPORTED_METHODS_COUNT; i++) {
+		if(0 == strcmp(SupportedMethods[i], sensor)) break;
+	}
+	if (i == SUPPORTED_METHODS_COUNT) return -1;
+	else return i;
+}
+
+
+
 int serverTransID= 0;
 
 void handleNotImplemented(void) {
-    String message;
+    String message; message.reserve(MSG_SIZE); 
     uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
     uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
     StaticJsonDocument<JSON_SIZE> doc;
@@ -55,12 +68,12 @@ void handleNotImplemented(void) {
 
 void handleSupportedActionsGet(void)
 {
-    String message;
+    String message; message.reserve(MSG_SIZE); 
     uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
     uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
     StaticJsonDocument<JSON_SIZE> doc;
     JsonObject root = doc.to<JsonObject>();
-    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "SupportedActions", AE_Success, "" );    
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_Success, "" );    
     JsonArray values  = root.createNestedArray("Value"); 
 	if(SUPPORTED_ACTIONS_COUNT) {
 		for(int i= 0; i < SUPPORTED_ACTIONS_COUNT; i++) {
@@ -74,7 +87,7 @@ void handleSupportedActionsGet(void)
 
 void handleAction(void)
 {
-    String message;
+    String message; message.reserve(MSG_SIZE);
     uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
     uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
 	String Action= server.arg("Action");
@@ -82,7 +95,7 @@ void handleAction(void)
     StaticJsonDocument<JSON_SIZE> doc;
     JsonObject root = doc.to<JsonObject>();
 	// do we know how to deal with this Action?
-    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "Action", AE_notImplemented, "Not implemented" );
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_notImplemented, "Not implemented" );
     root["Value"]= "";
     serializeJson(doc, message);
     server.send(200, "application/json", message);
@@ -91,7 +104,7 @@ void handleAction(void)
 
 void handleCommandBlind(void)
 {
-    String message;
+    String message; message.reserve(MSG_SIZE);
     uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
     uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
 	String Command= server.arg("Command");
@@ -99,7 +112,7 @@ void handleCommandBlind(void)
     StaticJsonDocument<JSON_SIZE> doc;
     JsonObject root = doc.to<JsonObject>();
 	// Handle Command
-    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "CommandBlind", AE_notImplemented, "Not implemented" );
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_notImplemented, "Not implemented" );
     root["Value"]= "";
     serializeJson(doc, message);
     server.send(200, "application/json", message);
@@ -108,7 +121,7 @@ void handleCommandBlind(void)
 
 void handleCommandBool(void)
 {
-    String message;
+    String message; message.reserve(MSG_SIZE);
     uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
     uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
 	String Command= server.arg("Command");
@@ -116,7 +129,7 @@ void handleCommandBool(void)
     StaticJsonDocument<JSON_SIZE> doc;
     JsonObject root = doc.to<JsonObject>();
     // Handle Command
-	jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "CommandBool", AE_notImplemented, "Not implemented" );
+	jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_notImplemented, "Not implemented" );
     root["Value"]= false; 
     serializeJson(doc, message);   
     server.send(200, "application/json", message);
@@ -125,12 +138,12 @@ void handleCommandBool(void)
 
 void handleCommandString(void)
 {
-    String message;
+    String message; message.reserve(MSG_SIZE);
     uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
     uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
     StaticJsonDocument<JSON_SIZE> doc;
     JsonObject root = doc.to<JsonObject>();
-    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "CommandString", AE_notImplemented, "Not implemented" );
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_notImplemented, "Not implemented" );
     root["Value"]= ""; 
     serializeJson(doc, message);   
     server.send(200, "application/json", message);
@@ -139,12 +152,12 @@ void handleCommandString(void)
 
 void handleConnected(void)
 {
-    String message;
+    String message; message.reserve(MSG_SIZE);
     uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
     uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
     StaticJsonDocument<JSON_SIZE> doc;
     JsonObject root = doc.to<JsonObject>();
-    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "Connected", AE_Success, "" );
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_Success, "" );
     
     if ( server.method() == HTTP_PUT )
     { 
@@ -154,7 +167,7 @@ void handleConnected(void)
         if ( connected )//already true
         {
           //Check error numbers
-          jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "Connected", AE_Success, "" /*"Setting connected when already connected"*/ );        
+          jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_Success, "" /*"Setting connected when already connected"*/ );        
           root["Value"]= true;    
           serializeJsonPretty(doc, message);
           server.send( 200, "application/json", message ); 
@@ -183,14 +196,14 @@ void handleConnected(void)
         else
         {
           //Check error numbers
-          jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "Connected", AE_Success, "Clearing 'connected' when already cleared" );        
+          jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_Success, "Clearing 'connected' when already cleared" );        
           root.remove( "Value" );
           serializeJson(doc, message);   
           server.send( 200, "application/json", message);
           return;          
         }
       }
-      jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "Connected", AE_Success, "" );        
+      jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_Success, "" );        
       root.remove( "Value" );
       serializeJson(doc, message);
       server.send( 200, "application/json", message);
@@ -199,7 +212,7 @@ void handleConnected(void)
     else if ( server.method() == HTTP_GET )
     {
       //Check error numbers
-      jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "Connected", AE_Success, "" );        
+      jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_Success, "" );        
       root["Value"] = connected;      
       serializeJson(doc, message);
       server.send( 200, "application/json", message);
@@ -207,7 +220,7 @@ void handleConnected(void)
     }
     else
     {
-      jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "Connected", AE_invalidOperation , "Unexpected HTTP method" );        
+      jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_invalidOperation , "Unexpected HTTP method" );        
       root["Value"] = connected;      
       serializeJson(doc, message);
       server.send( 200, "application/json", message);
@@ -217,12 +230,12 @@ void handleConnected(void)
 
 void handleDescriptionGet(void)
 {
-    String message;
+    String message; message.reserve(MSG_SIZE);
     uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
     uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
     StaticJsonDocument<JSON_SIZE> doc;
     JsonObject root = doc.to<JsonObject>();
-    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "Description", AE_Success, "" );    
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_Success, "" );    
     root["Value"]= DriverName;  // ASCOM device type  
     serializeJson(doc, message);
     server.send(200, "application/json", message);
@@ -231,12 +244,12 @@ void handleDescriptionGet(void)
 
 void handleDriverInfoGet(void)
 {
-    String message;
+    String message; message.reserve(MSG_SIZE);
     uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
     uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
     StaticJsonDocument<JSON_SIZE> doc;
     JsonObject root = doc.to<JsonObject>();
-    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "DriverInfo", AE_Success, "" );    
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_Success, "" );    
     root["Value"]= DriverInfo;    
     serializeJson(doc, message);
     server.send(200, "application/json", message);
@@ -245,12 +258,12 @@ void handleDriverInfoGet(void)
 
 void handleDriverVersionGet(void)
 {
-    String message;
+    String message; message.reserve(MSG_SIZE);
     uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
     uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
     StaticJsonDocument<JSON_SIZE> doc;
     JsonObject root = doc.to<JsonObject>();
-    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "DriverVersion", AE_Success, "" );    
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_Success, "" );    
     root["Value"]= DriverVersion; // int   
     serializeJson(doc, message);
     server.send(200, "application/json", message);
@@ -259,12 +272,12 @@ void handleDriverVersionGet(void)
 
 void handleInterfaceVersionGet(void)
 {
-    String message;
+    String message; message.reserve(MSG_SIZE);
     uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
     uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
     StaticJsonDocument<JSON_SIZE> doc;
     JsonObject root = doc.to<JsonObject>();
-    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "InterfaceVersion", AE_Success, "" );    
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_Success, "" );    
     root["Value"]= InterfaceVersion;    
     serializeJson(doc, message);
     server.send(200, "application/json", message);
@@ -273,12 +286,12 @@ void handleInterfaceVersionGet(void)
 
 void handleNameGet(void)
 {
-    String message;
+    String message; message.reserve(MSG_SIZE);
     uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
     uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
     StaticJsonDocument<JSON_SIZE> doc;
     JsonObject root = doc.to<JsonObject>();
-    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "Name", AE_Success, "" );    
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_Success, "" );    
     root["Value"] = DriverName;  // ASCOM device type
     serializeJson(doc, message);
     server.send(200, "application/json", message);
@@ -294,12 +307,12 @@ void handleNameGet(void)
 void handleAPIversions(void)
 {
 	// Returns an integer array of supported Alpaca API version numbers.
-    String message;
+    String message; message.reserve(MSG_SIZE);
     uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
     uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
     StaticJsonDocument<JSON_SIZE> doc;
     JsonObject root = doc.to<JsonObject>();
-    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "APIversions", AE_Success, "" );    
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_Success, "" );    
     JsonArray values  = root.createNestedArray("Value");     
     values.add(atoi(InterfaceVersion.c_str()));
     serializeJson(doc, message);
@@ -311,12 +324,12 @@ void handleAPIversions(void)
 void handleAPIdescription(void)
 {
 	//  Returns cross-cutting information that applies to all devices available at this URL:Port.
-    String message;
+    String message; message.reserve(MSG_SIZE);
     uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
     uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
     StaticJsonDocument<JSON_SIZE> doc;
     JsonObject root = doc.to<JsonObject>();
-    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "APIDescription", AE_Success, "" );    
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_Success, "" );    
 	JsonObject Value = root.createNestedObject("Value");
     Value["ServerName"]= SERVERNAME;
     Value["Manufacturer"]= MFG;
@@ -332,12 +345,12 @@ void handleAPIconfiguredDevices(void)
 {
 	// Returns an array of device description objects, providing unique information for each served device, 
 	// enabling them to be accessed through the Alpaca Device API.
-    String message;
+    String message; message.reserve(MSG_SIZE);
     uint32_t clientID = (uint32_t)server.arg("ClientID").toInt();
     uint32_t clientTransID = (uint32_t)server.arg("ClientTransactionID").toInt();
     StaticJsonDocument<JSON_SIZE> doc;
     JsonObject root = doc.to<JsonObject>();
-    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "APIconfigureddevices", AE_Success, "" );    
+    jsonResponseBuilder( root, clientID, clientTransID, ++serverTransID, "", AE_Success, "" );    
     JsonArray values  = root.createNestedArray("Value");
 	JsonObject device = values.createNestedObject(); // creates an object in the array
     device["DeviceName"]= Description; // To appear in list to user
